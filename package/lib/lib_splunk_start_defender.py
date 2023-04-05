@@ -65,7 +65,7 @@ def splunk_start_defender_get_conf(session_key, splunkd_uri):
     try:
         # Use a context manager to handle the request
         with session.get(target_url, verify=False) as response:
-            if response.status_code == 200:
+            if response.ok:
                 logging.debug(f"Success retrieving conf, data=\"{response}\"")
                 response_json = response.json()
                 return response_json
@@ -102,7 +102,7 @@ def splunk_start_defender_get_account(session_key, splunkd_uri, account):
     try:
         # Use a context manager to handle the request
         with session.post(target_url, data=json.dumps({'account': account}), verify=False) as response:
-            if response.status_code == 200:
+            if response.ok:
                 logging.debug(f"Success retrieving account, data=\"{response}\"")
                 response_json = response.json()
                 return response_json
