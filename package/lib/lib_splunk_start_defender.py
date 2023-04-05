@@ -127,6 +127,9 @@ def circ_get_status(circ_token, computername, circ_url):
     session = requests.Session()
     session.headers.update(headers)
 
+    # set the url
+    relay_url = relay_url + '/status'
+
     try:
         with session.post(circ_url, params=params, verify=False) as response:
             if response.ok:
@@ -172,6 +175,9 @@ def circ_start_scan(circ_token, computername, circ_url, fullscan=False):
 
     session = requests.Session()
     session.headers.update(headers)
+
+    # set the url
+    relay_url = relay_url + '/scan'
 
     try:
         with session.post(circ_url, params=params, verify=False) as response:

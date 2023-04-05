@@ -250,7 +250,7 @@
     "meta": {
         "name": "splunk_start_defender",
         "restRoot": "splunk_start_defender",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "displayName": "splunk_start_defender",
         "schemaVersion": "0.0.3"
     }
