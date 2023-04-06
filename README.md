@@ -181,4 +181,27 @@ For instance, we can preset the logging level.
 
 `web.conf`
 
-This file is required here to expose the REST APU endpoints via Splunk Web too.
+This file is required here to expose the REST API endpoints via Splunk Web too.
+
+## Least privileges approach
+
+A typical issue with Splunk custom command and other types of advanced development techniques for Splunk relies on the fact that these require to grant users with high privileges capabilities.
+
+In between, the following capability are problematic:
+
+- `admin_allobjects`
+- `list_settings`
+- `list_storage_password`
+
+The worst is with nio doubts the last, which allows a user with some levels of knowledge to expose any Splunk credentials that are stored in the Splunk secure credentials store, and this in a clear text format. (!)
+
+To avoid this issue, we can leverage API REST endpoints with escalated system wide privileges, associating these with capabilities and RBAC for a full and secured control compliant with best security practices:
+
+- When the user requests the execution of the custom command, a Python function is called, which itself is stored in a Python file stored in the `lib` directory.
+- The Python function performs a REST call locally, using the splunkd_uri provided as part of the self metadata by Splunk
+- The endpoints can allow be accessed by users which own the right `capanility`
+- If the user owns the capability, the REST API endpoints executes and estiablishes a Splunk Python SDK service using the system wide token.
+- The REST API returns required information, settings and credentials in a programmatic manner back to the requesting Python function
+- The rest of the logic can be executed as needed, without the need from any further privileges
+
+Using these techniques, users can be granted the right to use the custom commands, even with very low and limited privileges.
