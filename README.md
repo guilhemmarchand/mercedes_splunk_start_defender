@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This Add-on was designed to handle a REST API based interraction with the defender service, in SPL with two interractive generating custom commands:
+This Add-on was designed to handle a REST API based interaction with the defender service, in SPL with two interactive generating custom commands:
 
 _defenderstatus:_
 
@@ -14,9 +14,9 @@ _defenderscan:_
 
 It was redesigned and repackaged for the purpose of the Splunk Cloud migration, with the following evolutions:
 
-- The custom commands need to be exectued on Splunk Cloud, but relayed to another Splunk instance running on-premise
+- The custom commands need to be executed on Splunk Cloud, but relayed to another Splunk instance running on-premise
 - The Splunk Enterprise on-premise instance (a Heavy Forwarder) then receives the incoming query, and performs the action effectively
-- In addition, a least privleges approach was implemented to avoid having to grant some security concerning Splunk capabilities
+- In addition, a least privileges approach was implemented to avoid having to grant some security concerning Splunk capabilities
 - To achieve this, we use REST API endpoints associated with custom capabilities, as well as a RBAC approach to grant capabilities as needed
 - Finally, the application was completely redesigned to rely on the Splunk UCC framework
 
@@ -77,7 +77,7 @@ To update the application version, you need to update the version.json which is 
 The Python build.py script does the following:
 
 - It retrieves the current application version in the file version.json
-- It prepares and cleans if necessary previous execution and artifacts in the output directory
+- It prepares and cleans if necessary previous execution and artefacts in the output directory
 - It calls the ucc-gen command including the version requirement
 - It packages the generated directory and content into a tgz file
 - It writes a version.txt, a build.txt and a release-sha256.txt containing the unique sha256 sum of the generated tgz file
@@ -90,7 +90,7 @@ The content of the output directory should be excluded from the Git repository, 
     output/*
     !output/README.txt
 
-As well, some Python related artifacts should be excluded in the build directory:
+As well, some Python related artefacts should be excluded in the build directory:
 
     # Py build
     build/libs/__pycache__
@@ -148,7 +148,7 @@ Defines the custom commands and the associated Python files.
 
 In the context of this Add-on, it is important to highlight that Python scripts (custom commands and API endpoints) generate logs effectively.
 
-The best practice is to manage explicitely the source ingestion definition to allow a proper parsing at index time and search time.
+The best practice is to manage explicitly the source ingestion definition to allow a proper parsing at index time and search time.
 
 `restmap.conf`
 
@@ -160,7 +160,7 @@ These API endpoints are called when performing the configuration of the Add-on v
 
 `searchbnf.conf`
 
-Describes the custom command options and syntax, allowing autocomplention in Splunk.
+Describes the custom command options and syntax, allowing autocompletion in Splunk.
 
 `server.conf`
 
@@ -187,17 +187,17 @@ This file is required here to expose the REST API endpoints via Splunk Web too.
 
 `requirements.txt`
 
-This file is a pypi file format which is used by ucc-gen to automatically retrieve the required Python librairies for the Add-on to operate.
+This file is a pypi file format which is used by ucc-gen to automatically retrieve the required Python libraries for the Add-on to operate.
 
 As a minimal version, it would contain:
 
     splunktaucclib>=5.0.4
 
-You can add any additional librairies that would be required to be imported by a Python logic.
+You can add any additional libraries that would be required to be imported by a Python logic.
 
-Note that some librairies can be problematic if these includes compiles binaries for a certain type of processor architector.
+Note that some libraries can be problematic if these includes compiled binaries for a certain type of processor architecture.
 
-In such a case, you can as well include manually the librairies in the lib directory, which will be included in the final package automatically.
+In such a case, you can as well include manually the libraries in the lib directory, which will be included in the final package automatically.
 
 `lib_splunk_start_defender.py`
 
@@ -205,7 +205,7 @@ In this Python file, we store various utility Python functions which will be imp
 
 `rest_handler.py`
 
-This Python file is a REST API wrapper, it is used for various purposes to faciliate the management of our REST API endpoints, such as orchestrating the extraction of Metadata and organize the endpoints structure and output format.
+This Python file is a REST API wrapper, it is used for various purposes to facilitate the management of our REST API endpoints, such as orchestrating the extraction of Metadata and organising the endpoints structure and output format.
 
 ## Least privileges approach
 
@@ -217,14 +217,14 @@ In between, the following capability are problematic:
 - `list_settings`
 - `list_storage_password`
 
-The worst is with nio doubts the last, which allows a user with some levels of knowledge to expose any Splunk credentials that are stored in the Splunk secure credentials store, and this in a clear text format. (!)
+The worst is with no doubts the last, which allows a user with some levels of knowledge to expose any Splunk credentials that are stored in the Splunk secure credentials store, and this in a clear text format. (!)
 
 To avoid this issue, we can leverage API REST endpoints with escalated system wide privileges, associating these with capabilities and RBAC for a full and secured control compliant with best security practices:
 
 - When the user requests the execution of the custom command, a Python function is called, which itself is stored in a Python file stored in the `lib` directory.
 - The Python function performs a REST call locally, using the splunkd_uri provided as part of the self metadata by Splunk
 - The endpoints can allow be accessed by users which own the right `capability`
-- If the user owns the capability, the REST API endpoints executes and estiablishes a Splunk Python SDK service using the system wide token.
+- If the user owns the capability, the REST API endpoints executes and establishes a Splunk Python SDK service using the system wide token.
 - The REST API returns required information, settings and credentials in a programmatic manner back to the requesting Python function
 - The rest of the logic can be executed as needed, without the need from any further privileges
 
@@ -271,7 +271,7 @@ When establishing the Python SDK service, the REST API endpoints functions store
         token=request_info.system_authtoken
     )
 
-This way, the action is performed with system level privieleges rather than limited user privileges.
+This way, the action is performed with system level privileges rather than limited user privileges.
 
 Lastly, the endpoint is protected via capability:
 
@@ -360,9 +360,9 @@ The same technique applies to other endpoints, for instance to retrieve the cred
 
 ## Application behaviour: relaying Splunk Cloud originating request to a relay server
 
-A key of the Add-on behaviour relies on the fact that these API actions need to operate from a SAS based service (Splunk Cloud) and be executed against an on-premise service, that cannot be made available from Splunk Cloud direclty.
+A key of the Add-on behaviour relies on the fact that these API actions need to operate from a SAS based service (Splunk Cloud) and be executed against an on-premise service that cannot be made available from Splunk Cloud directly.
 
-**For this to operate, the following workflow was developped:**
+**For this to operate, the following workflow was developed:**
 
 - On Splunk Cloud, the application is deployed accordingly
 - A configuration item, `instance_role`, instructs the Addon where it operates, valid options are `splunk_cloud`, `splunk_relay`
@@ -374,7 +374,7 @@ A key of the Add-on behaviour relies on the fact that these API actions need to 
 
 - On Splunk Cloud, a granted user executed the defender custom command
 - As it is operating in `instance_role=splunk_cloud`, the custom command performs a REST call to an API endpoint part of the application on the Splunk Heavy Forwarder
-- The Splunk Enterprise on-premise instance running the Addon with `instance_role=splunk_relay` receives the request on its listening enpoint
+- The Splunk Enterprise on-premise instance running the Addon with `instance_role=splunk_relay` receives the request on its listening endpoint
 - It operates the REST API call to the Defender service, and returns the response in return
 - The custom command executed on Splunk Cloud receives the response and returns it to the requester user
 
@@ -385,14 +385,14 @@ _On Splunk Cloud:_
 - As explained in the previous section, the requesting user can only execute the custom command successfully if he owns the required capability
 - If granted, the Python logic retrieves the stored in the account for `relay_url` and `relay_token`
 - The `relay_url` represents the access to the Heavy Forwarder endpoint, in the format `https://<ip_address|fqdn>:<port>`
-- The `relay_token` is a Splunk bearrer token created on the Splunk on-premise Heavy Forwarder, which itself owns the required capability, the token value is configured on the Splunk Cloud account configuration
+- The `relay_token` is a Splunk bearer token created on the Splunk on-premise Heavy Forwarder, which itself owns the required capability, the token value is configured on the Splunk Cloud account configuration
 
 _On the Splunk Relay:_
 
 - The Splunk relay, the On-premise Heavy Forwarder, has the associated account configured in the Add-on with `circ_url` and `circ_token`
 - `circ_url` is the target Defender service in the format `https://<ip_address|fqdn>:<port>`
-- `circ_token` is a bearrer token providing access to the Defender API service
-- When the endpoint is executed on the Splunk relay, upong a request originating from the custom command executed on Splunk Cloud, the endpoint retrieves the `circ_url` and `circ_token` equally and execute the requested action
+- `circ_token` is a bearer token providing access to the Defender API service
+- When the endpoint is executed on the Splunk relay, upon a request originating from the custom command executed on Splunk Cloud, the endpoint retrieves the `circ_url` and `circ_token` equally and execute the requested action
 - Finally, it returns the HTTP response which is interpreted by the Splunk Cloud side Python logic and returned to the user
 
 ## Logging and troubleshooting
@@ -449,9 +449,9 @@ This first relies on the `props.conf` definition part of the application:
     logging.info(json.dumps(yield_record, indent=2))
     yield yield_record
 
-**Observing unauthorized response:**
+**Observing unauthorised response:**
 
-**Should a REST query be made against the endpoints without owning the capability, the following answer will be raisded:**
+**Should a REST query be made against the endpoints without owning the capability, the following answer will be raised:**
 
 Example:
 
@@ -495,31 +495,35 @@ The following endpoints are available as part of this application:
 ### get conf
 
 - type: GET
-- purpose: returns all Add-on configuration items and values in a JSON structured dictionnary
-- curl example:
+- purpose: returns all Add-on configuration items and values in a JSON structured dictionary
 
-  curl -k -H "Authorization: Splunk $token" -X GET https://$mytarget:8089/services/splunk_start_defender/manager/splunk_start_defender_conf
+_curl example:_
+
+    curl -k -H "Authorization: Splunk $token" -X GET https://$mytarget:8089/services/splunk_start_defender/manager/splunk_start_defender_conf
 
 ### get account
 
 - type: POST
 - purpose: returns the account configuration, depending on the `instance_role`, to be used by the custom commands and API endpoints in a programmatic fashion
-- curl example:
 
-  curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/get_account -d '{"account": "circapi_defender"}' | jq .
+_curl example:_
+
+    curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/get_account -d '{"account": "circapi_defender"}' | jq .
 
 ### run Defender get status action (relay)
 
 - type: POST
 - purpose: runs the Defender get status action in relay mode
-- curl example:
 
-  curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/relay_circ_get_status -d '{"account": "circapi_defender", "computername": "foo"}'
+_curl example:_
+
+    curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/relay_circ_get_status -d '{"account": "circapi_defender", "computername": "foo"}'
 
 ### run Defender scan action (relay)
 
 - type: POST
 - purpose: runs the Defender scan action in relay mode
-- curl example:
 
-  curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/relay_circ_start_scan -d '{"account": "circapi_defender", "computername": "foo", "fullscan": "True"}'
+_curl example:_
+
+    curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/relay_circ_start_scan -d '{"account": "circapi_defender", "computername": "foo", "fullscan": "True"}'
