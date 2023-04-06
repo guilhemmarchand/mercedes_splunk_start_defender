@@ -199,9 +199,137 @@ To avoid this issue, we can leverage API REST endpoints with escalated system wi
 
 - When the user requests the execution of the custom command, a Python function is called, which itself is stored in a Python file stored in the `lib` directory.
 - The Python function performs a REST call locally, using the splunkd_uri provided as part of the self metadata by Splunk
-- The endpoints can allow be accessed by users which own the right `capanility`
+- The endpoints can allow be accessed by users which own the right `capability`
 - If the user owns the capability, the REST API endpoints executes and estiablishes a Splunk Python SDK service using the system wide token.
 - The REST API returns required information, settings and credentials in a programmatic manner back to the requesting Python function
 - The rest of the logic can be executed as needed, without the need from any further privileges
 
 Using these techniques, users can be granted the right to use the custom commands, even with very low and limited privileges.
+
+### Exposing the REST API endpoint with passSystemAuth
+
+The first requirement is to expose REST API endpoints with the `passSystemAuth` option and associates this with one or more capabilities:
+
+    [script:trackme_rest_handler_secmanager]
+    match                 = /splunk_start_defender/manager
+    script                = splunk_start_manager_rest_handler.py
+    scripttype            = persist
+    handler               = splunk_start_manager_rest_handler.SplunkStartDefender_v1
+    output_modes          = json
+    passPayload           = true
+    passSystemAuth        = true
+    capability            = splunkstartdefender
+    python.version = python3
+
+When exposed this way, the REST API endpoint will automatically benefit from a special authentication token, in addition with the user based session token:
+
+- `system_authtoken`
+
+This special special authentication token is parsed and made available via the `rest_handler.py` Python wrapper:
+
+    #
+    # system auth
+    #
+
+    # If passSystemAuth = True, add system_authtoken
+    try:
+        system_authtoken = args['system_authtoken']
+    except Exception as e:
+        system_authtoken = None
+
+When establishing the Python SDK service, the REST API endpoints functions stored in `splunk_start_manager_rest_handler.py` (in bin directory) use the system level token, rather than the user level token requesting the action:
+
+    # Get service
+    service = client.connect(
+        owner="nobody",
+        app="splunk_start_defender",
+        port=request_info.connection_listening_port,
+        token=request_info.system_authtoken
+    )
+
+This way, the action is performed with system level privieleges rather than limited user privileges.
+
+Lastly, the endpoint is protected via capability:
+
+    capability            = splunkstartdefender
+
+This capability is defined in the file `authorize.conf`, granted to a builtin role which is part of the application.
+
+As well, this capability needs to be explicitly enabled for the `sc_admin` role for Splunk Cloud to allow granting this role:
+
+    # authorize.conf
+
+    #
+    # capabilities
+    #
+
+    # only roles with this capability can access to the splunk_start_defender API endpoints, and use the application accordingly
+    [capability::splunkstartdefender]
+
+    #
+    # roles
+    #
+
+    # users members of this role, or roles inheriting this roles can use the app
+
+    [role_splunk_start_defender]
+
+    # Minimal import
+    importRoles = user
+
+    # capabilities
+    splunkstartdefender = enabled
+
+    # This is required for Splunk Cloud
+    [role_sc_admin]
+    splunkstartdefender = enabled
+
+Finally, the custom commands calls a Python function which itself performs the REST call locally to splunkd, using the Python requests module:
+
+    # get account
+    try:
+        # get account
+        account_conf = splunk_start_defender_get_account(self._metadata.searchinfo.session_key, self._metadata.searchinfo.splunkd_uri, self.account)
+
+    except Exception as e:
+        raise Exception(str(e))
+
+This function, stored in `lib/lib_splunk_start_defender.py` performs:
+
+    # get system wide conf with least privilege approach
+    def splunk_start_defender_get_conf(session_key, splunkd_uri):
+        """
+        Retrieve settings.
+        """
+
+        # Ensure splunkd_uri starts with "https://"
+        if not splunkd_uri.startswith("https://"):
+            splunkd_uri = f"https://{splunkd_uri}"
+
+        # Build header and target URL
+        headers = CaseInsensitiveDict()
+        headers["Authorization"] = f"Splunk {session_key}"
+        target_url = f"{splunkd_uri}/services/splunk_start_defender/manager/splunk_start_defender_conf"
+
+        # Create a requests session for better performance
+        session = requests.Session()
+        session.headers.update(headers)
+
+        try:
+            # Use a context manager to handle the request
+            with session.get(target_url, verify=False) as response:
+                if response.ok:
+                    logging.debug(f"Success retrieving conf, data=\"{response}\"")
+                    response_json = response.json()
+                    return response_json
+                else:
+                    error_message = f"Failed to retrieve conf, status_code={response.status_code}, response_text=\"{response.text}\""
+                    logging.error(error_message)
+                    raise Exception(error_message)
+
+        except Exception as e:
+            error_message = f"Failed to retrieve conf, exception=\"{str(e)}\""
+            logging.error(error_message)
+            raise Exception(error_message)
+
+The same technique applies to other endpoints, for instance to retrieve the credentials (tokens) stored in the Splunk secure credential store, and make these available in a secured fashion to the rest of the Python process.
