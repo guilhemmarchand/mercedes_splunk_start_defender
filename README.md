@@ -195,7 +195,7 @@ As a minimal version, it would contain:
 
 You can add any additional libraries that would be required to be imported by a Python logic.
 
-Note that some libraries can be problematic if these includes compiled binaries for a certain type of processor architecture.
+Note that some libraries can be problematic if these include compiled binaries for a certain type of processor architecture.
 
 In such a case, you can as well include manually the libraries in the lib directory, which will be included in the final package automatically.
 
@@ -409,7 +409,7 @@ In Splunk Cloud, the instance role must be set to "Splunk Cloud". (this is the d
 
 For the Splunk Cloud configuration, the following items are required:
 
-- `account name`: the custom command expects a default of circapi_defender (if a different account name is configured, the account must be explicitly mentionned while calling the custom command)
+- `account name`: the custom command expects a default of circapi_defender (if a different account name is configured, the account must be explicitly mentioned while calling the custom command)
 
 - `relay_url`: The Splunk relay, in the format `https://fqdn:port`
 
@@ -425,7 +425,7 @@ For the Splunk Cloud configuration, the following items are required:
 
 **Then, the corresponding account must be created, under the same name as created on Splunk Cloud, the following information are required:**
 
-- `account name`: the custom command expects a default of circapi_defender (if a different account name is configured, the account must be explicitly mentionned while calling the custom command)
+- `account name`: the custom command expects a default of circapi_defender (if a different account name is configured, the account must be explicitly mentioned while calling the custom command)
 
 - `circ_url`: The Defender API url, in the format `https://fqdn:port`
 
@@ -435,9 +435,9 @@ For the Splunk Cloud configuration, the following items are required:
 
 ### Testing the custom command
 
-Once the configuration has been performed, assuming the connectivity between Splunk Cloud and the Splunk Relay (HTTPS/8089) is operational, and the other information are accurate, the operation will be performed as expected.
+Once the configuration has been performed, assuming the connectivity between Splunk Cloud and the Splunk Relay (HTTPS/8089) is operational, and other settings are valid, the operation will be performed as expected.
 
-**In the following example, and for the purposes of this documentation, there is real Defender API, however we can obersever the following:**
+**In the following example, and for the purposes of this documentation, there is real Defender API, however we can observe the following:**
 
 - The custom command call was accepted, our user has the permissions to access the associated endpoints
 - The connectivity is operational, we can view the response from the Splunk Relay which attempted to perform the operation
