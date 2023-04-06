@@ -53,7 +53,7 @@ The application development structure is the following:
     globalConfig.json
     version.json
 
-### build directory
+### build and output directories
 
 The build directory contains a simple build.py script which can be executed to orchestrate the generation or the final package.
 
@@ -66,6 +66,13 @@ To generate a new build and retain the extracted directory in the output directo
 
     cd build
     python3 build.py --keep
+
+To update the application version, you need to update the version.json which is then taken into account automatically:
+
+    {
+    "version": "1.0.4",
+    "appID": "splunk_start_defender"
+    }
 
 The Python build.py script does the following:
 
@@ -87,3 +94,31 @@ As well, some Python related artifacts should be excluded in the build directory
 
     # Py build
     build/libs/__pycache__
+
+### package directory
+
+The `package` directory is the Splunk application structure content, any directory and its content will be picked up automatically by ucc-gen and included into the application release.
+
+It should contain at the minimum:
+
+    bin
+    default
+    lib
+    static
+    app.manifest
+
+#### bin directory
+
+The bin directory would contain executable scripts and binaries, in the case of this Addon, we have the following:
+
+`get_defender_status.py`
+
+- The Splunk generating custom command corresponding to the the SPL command `| defenderstatus`
+
+`splunk_start_manager_rest_handler.py`
+
+- This Python script contains the REST endpoints which are going to be exposed by splunkd
+
+`start_defender.py`
+
+- The Splunk generating custom command corresponding to the the SPL command `| defenderscan`
