@@ -357,3 +357,169 @@ This function, stored in `lib/lib_splunk_start_defender.py` performs:
             raise Exception(error_message)
 
 The same technique applies to other endpoints, for instance to retrieve the credentials (tokens) stored in the Splunk secure credential store, and make these available in a secured fashion to the rest of the Python process.
+
+## Application behaviour: relaying Splunk Cloud originating request to a relay server
+
+A key of the Add-on behaviour relies on the fact that these API actions need to operate from a SAS based service (Splunk Cloud) and be executed against an on-premise service, that cannot be made available from Splunk Cloud direclty.
+
+**For this to operate, the following workflow was developped:**
+
+- On Splunk Cloud, the application is deployed accordingly
+- A configuration item, `instance_role`, instructs the Addon where it operates, valid options are `splunk_cloud`, `splunk_relay`
+- The Addon is deployed to an on-premise Splunk Enterprise Heavy Forwarder, which can reach the Defender API service
+- The outgoing traffic from Splunk Cloud to the on-premise Heavy Forwarder API service is allow listed via ACS (HTTPS over 8089)
+- The Addon on the on-premise side is configured with `instance_role` as `splunk_relay`
+
+**When the custom command is executed:**
+
+- On Splunk Cloud, a granted user executed the defender custom command
+- As it is operating in `instance_role=splunk_cloud`, the custom command performs a REST call to an API endpoint part of the application on the Splunk Heavy Forwarder
+- The Splunk Enterprise on-premise instance running the Addon with `instance_role=splunk_relay` receives the request on its listening enpoint
+- It operates the REST API call to the Defender service, and returns the response in return
+- The custom command executed on Splunk Cloud receives the response and returns it to the requester user
+
+**Authentication and privileges:**
+
+_On Splunk Cloud:_
+
+- As explained in the previous section, the requesting user can only execute the custom command successfully if he owns the required capability
+- If granted, the Python logic retrieves the stored in the account for `relay_url` and `relay_token`
+- The `relay_url` represents the access to the Heavy Forwarder endpoint, in the format `https://<ip_address|fqdn>:<port>`
+- The `relay_token` is a Splunk bearrer token created on the Splunk on-premise Heavy Forwarder, which itself owns the required capability, the token value is configured on the Splunk Cloud account configuration
+
+_On the Splunk Relay:_
+
+- The Splunk relay, the On-premise Heavy Forwarder, has the associated account configured in the Add-on with `circ_url` and `circ_token`
+- `circ_url` is the target Defender service in the format `https://<ip_address|fqdn>:<port>`
+- `circ_token` is a bearrer token providing access to the Defender API service
+- When the endpoint is executed on the Splunk relay, upong a request originating from the custom command executed on Splunk Cloud, the endpoint retrieves the `circ_url` and `circ_token` equally and execute the requested action
+- Finally, it returns the HTTP response which is interpreted by the Splunk Cloud side Python logic and returned to the user
+
+## Logging and troubleshooting
+
+The Add-on is designed to use best logging practices, 2 log files are generated in `$SPLUNK_HOME/var/log/splunk/` and automatically indexed in the corresponding Splunk environment.
+
+This first relies on the `props.conf` definition part of the application:
+
+    [source::...splunk_start_manager_rest_api.log]
+    sourcetype = splunk_start_defender:rest
+    SHOULD_LINEMERGE=false
+    LINE_BREAKER=([\r\n]+)\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}
+    CHARSET=UTF-8
+    TIME_PREFIX=^
+    TIME_FORMAT=%Y-%m-%d %H:%M:%S,%3N
+    TRUNCATE=0
+
+    [source::...splunk_start_defender.log]
+    sourcetype = splunk_start_defender:commands
+    SHOULD_LINEMERGE=false
+    LINE_BREAKER=([\r\n]+)\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}
+    CHARSET=UTF-8
+    TIME_PREFIX=^
+    TIME_FORMAT=%Y-%m-%d %H:%M:%S,%3N
+    TRUNCATE=0
+
+**When running on Splunk Cloud, the logs can be searched using:**
+
+    index=_internal sourcetype=splunk_start_defender:commands
+
+**When running on the Splunk relay, the logs be searched using:**
+
+    index=_internal sourcetype=splunk_start_defender:rest
+
+**In both cases, the Add-on carefully logs:**
+
+- The requester information
+- The detailed requested operation
+- The API response, either from the Splunk relay (which itself contains the API Defender response) or from the Defender API
+
+**This can be found in the custom commands and REST API endpoints, such as:**
+
+    # run call
+    yield_record = {
+        '_time': time.time(),
+        '_raw': {
+            'action': 'requested',
+            'requester': self._metadata.searchinfo.username,
+            'computername': self.computername,
+            'account': self.account,
+            'response': 'sending request to relay=\"{}\"'.format(relay_url),
+        },
+    }
+    logging.info(json.dumps(yield_record, indent=2))
+    yield yield_record
+
+**Observing unauthorized response:**
+
+**Should a REST query be made against the endpoints without owning the capability, the following answer will be raisded:**
+
+Example:
+
+    curl -k -H "Authorization: Splunk $token" -X GET https://$mytarget:8089/services/splunk_start_defender/manager/splunk_start_defender_conf
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <response>
+    <messages>
+        <msg type="WARN">insufficient permission to access this resource</msg>
+    </messages>
+    </response>
+
+**If properly allowed, we would have got:**
+
+    curl -k -H "Authorization: Splunk $token" -X GET https://$mytarget:8089/services/splunk_start_defender/manager/splunk_start_defender_conf
+
+    {
+    "logging": {
+        "disabled": "0",
+        "eai:appName": "splunk_start_defender",
+        "eai:userName": "nobody",
+        "loglevel": "INFO"
+    },
+    "proxy": {
+        "disabled": "0",
+        "eai:appName": "splunk_start_defender",
+        "eai:userName": "nobody"
+    },
+    "role": {
+        "disabled": "0",
+        "eai:appName": "splunk_start_defender",
+        "eai:userName": "nobody",
+        "instance_role": "splunk_relay"
+    }
+    }
+
+## Endpoints reference
+
+The following endpoints are available as part of this application:
+
+### get conf
+
+- type: GET
+- purpose: returns all Add-on configuration items and values in a JSON structured dictionnary
+- curl example:
+
+  curl -k -H "Authorization: Splunk $token" -X GET https://$mytarget:8089/services/splunk_start_defender/manager/splunk_start_defender_conf
+
+### get account
+
+- type: POST
+- purpose: returns the account configuration, depending on the `instance_role`, to be used by the custom commands and API endpoints in a programmatic fashion
+- curl example:
+
+  curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/get_account -d '{"account": "circapi_defender"}' | jq .
+
+### run Defender get status action (relay)
+
+- type: POST
+- purpose: runs the Defender get status action in relay mode
+- curl example:
+
+  curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/relay_circ_get_status -d '{"account": "circapi_defender", "computername": "foo"}'
+
+### run Defender scan action (relay)
+
+- type: POST
+- purpose: runs the Defender scan action in relay mode
+- curl example:
+
+  curl -k -H "Authorization: Splunk $token" -X POST https://$mytarget:8089/services/splunk_start_defender/manager/relay_circ_start_scan -d '{"account": "circapi_defender", "computername": "foo", "fullscan": "True"}'
