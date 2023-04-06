@@ -395,6 +395,66 @@ _On the Splunk Relay:_
 - When the endpoint is executed on the Splunk relay, upon a request originating from the custom command executed on Splunk Cloud, the endpoint retrieves the `circ_url` and `circ_token` equally and execute the requested action
 - Finally, it returns the HTTP response which is interpreted by the Splunk Cloud side Python logic and returned to the user
 
+## Configuration
+
+### On Splunk Cloud
+
+**Once the Add-on has been installed in Splunk Cloud, access to the configuration page:**
+
+![screen1](img/screen1.png)
+
+In Splunk Cloud, the instance role must be set to "Splunk Cloud". (this is the default behaviour for the Addon)
+
+**Then, access to the account configuration, an account should be created as:**
+
+For the Splunk Cloud configuration, the following items are required:
+
+- `account name`: the custom command expects a default of circapi_defender (if a different account name is configured, the account must be explicitly mentionned while calling the custom command)
+
+- `relay_url`: The Splunk relay, in the format `https://fqdn:port`
+
+- `relay_token`: The Splunk bearer token created on the Splunk relay, the account must have the capability `splunkstartdefender`
+
+![screen2](img/screen2.png)
+
+### On the Splunk Relay
+
+**Once installed, on the Splunk Relay, the instance role must be set to "Splunk Relay":**
+
+![screen3](img/screen3.png)
+
+**Then, the corresponding account must be created, under the same name as created on Splunk Cloud, the following information are required:**
+
+- `account name`: the custom command expects a default of circapi_defender (if a different account name is configured, the account must be explicitly mentionned while calling the custom command)
+
+- `circ_url`: The Defender API url, in the format `https://fqdn:port`
+
+- `circ_token`: The Defender API bearer token
+
+![screen4](img/screen4.png)
+
+### Testing the custom command
+
+Once the configuration has been performed, assuming the connectivity between Splunk Cloud and the Splunk Relay (HTTPS/8089) is operational, and the other information are accurate, the operation will be performed as expected.
+
+**In the following example, and for the purposes of this documentation, there is real Defender API, however we can obersever the following:**
+
+- The custom command call was accepted, our user has the permissions to access the associated endpoints
+- The connectivity is operational, we can view the response from the Splunk Relay which attempted to perform the operation
+- We can observe the proper handling of the exception, given that we tried to reach a non existing domain for Defender
+
+_Shall we fail to connect from Splunk Cloud to the Splunk Relay:_
+
+![screen5](img/screen5.png)
+
+_Shall the Splunk Relay be failing to reach the Defender API:_
+
+![screen6](img/screen6.png)
+
+_If the user is not allowed to access to the REST API (capability not granted):_
+
+![screen7](img/screen7.png)
+
 ## Logging and troubleshooting
 
 The Add-on is designed to use best logging practices, 2 log files are generated in `$SPLUNK_HOME/var/log/splunk/` and automatically indexed in the corresponding Splunk environment.
