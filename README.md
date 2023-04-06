@@ -157,3 +157,28 @@ The restmap.conf file contains the definition for the API endpoints to be taken 
 **ucc-gen** generates itself a first version of the restmap.conf configuration file as it does need API endpoints too.
 
 These API endpoints are called when performing the configuration of the Add-on via the configuration page ucc-gen generates, based on the `globalConfig.json` file.
+
+`searchbnf.conf`
+
+Describes the custom command options and syntax, allowing autocomplention in Splunk.
+
+`server.conf`
+
+This file is needed in our context as we manage via ucc-gen objects like:
+
+- preferences (called settings)
+- accounts (an account references credentials, secrets and per account settings)
+
+ucc-gen by itself does not generate (yet) the SHC replication stanza, this is required for the settings to be properly replicated amongst the SHC members.
+
+Without these settings, the configuration would work on a given SHC node, but not on others.
+
+`splunk_start_defender_settings.conf`
+
+In this file, we can preset default values for the options we made available to the Add-on via ucc-gen and the globalConfig.json.
+
+For instance, we can preset the logging level.
+
+`web.conf`
+
+This file is required here to expose the REST APU endpoints via Splunk Web too.
