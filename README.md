@@ -183,6 +183,30 @@ For instance, we can preset the logging level.
 
 This file is required here to expose the REST API endpoints via Splunk Web too.
 
+#### lib directory
+
+`requirements.txt`
+
+This file is a pypi file format which is used by ucc-gen to automatically retrieve the required Python librairies for the Add-on to operate.
+
+As a minimal version, it would contain:
+
+    splunktaucclib>=5.0.4
+
+You can add any additional librairies that would be required to be imported by a Python logic.
+
+Note that some librairies can be problematic if these includes compiles binaries for a certain type of processor architector.
+
+In such a case, you can as well include manually the librairies in the lib directory, which will be included in the final package automatically.
+
+`lib_splunk_start_defender.py`
+
+In this Python file, we store various utility Python functions which will be imported by the custom commands, as well as by the REST API endpoints themselves.
+
+`rest_handler.py`
+
+This Python file is a REST API wrapper, it is used for various purposes to faciliate the management of our REST API endpoints, such as orchestrating the extraction of Metadata and organize the endpoints structure and output format.
+
 ## Least privileges approach
 
 A typical issue with Splunk custom command and other types of advanced development techniques for Splunk relies on the fact that these require to grant users with high privileges capabilities.
