@@ -122,3 +122,38 @@ The bin directory would contain executable scripts and binaries, in the case of 
 `start_defender.py`
 
 - The Splunk generating custom command corresponding to the the SPL command `| defenderscan`
+
+#### default directory
+
+In default, we have the following configuration files:
+
+`app.conf`
+
+The usual Splunk app.conf, note that it **not needed to maintain versioning manually**, the ucc-gen will do it automatically.
+
+Therefore, when creating a new release, updating the app.conf is not necessary.
+
+`authorize.conf`
+
+We will describe further the content of this file in the next section regarding the least privileges approach, but in short it contains:
+
+- The custom capability
+- The role definitions which inherit and enable the capability as needed
+
+`commands.conf`
+
+Defines the custom commands and the associated Python files.
+
+`props.conf`
+
+In the context of this Add-on, it is important to highlight that Python scripts (custom commands and API endpoints) generate logs effectively.
+
+The best practice is to manage explicitely the source ingestion definition to allow a proper parsing at index time and search time.
+
+`restmap.conf`
+
+The restmap.conf file contains the definition for the API endpoints to be taken into account by splunk and exposed by splunkd.
+
+**ucc-gen** generates itself a first version of the restmap.conf configuration file as it does need API endpoints too.
+
+These API endpoints are called when performing the configuration of the Add-on via the configuration page ucc-gen generates, based on the `globalConfig.json` file.
