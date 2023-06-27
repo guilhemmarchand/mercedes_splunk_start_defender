@@ -44,6 +44,19 @@ class SplunkStartDefender_v1(rest_handler.RESTHandler):
         super(SplunkStartDefender_v1, self).__init__(command_line, command_arg, logger)
 
 
+    def get_test_endpoint(self, request_info, **kwargs):
+
+        response = {
+            'resource_endpoint': 'test_endpoint',
+            'resource_response': 'Welcome. Good to see you.', 
+        }
+
+        return {
+            "payload": response,
+            'status': 200
+        }
+    
+
     # get configuration items
     def get_splunk_start_defender_conf(self, request_info, **kwargs):
 
